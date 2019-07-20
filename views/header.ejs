@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <title>ChatsApp</title>
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css"
+        integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
+
+    <% if(locals.style) { %>
+    <script src="https://kit.fontawesome.com/58e59c54e3.js"></script>
+    <link rel="stylesheet" href="stylesheets/style.css">
+    <% } 
+    %>
+
+    <style>
+        body {
+            padding-top: 4rem;
+            font: 16px "Lucida Grande", Helvetica, Arial, sans-serif;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-toggleable-md navbar-inverse bg-inverse fixed-top"><button
+            class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse"
+            data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false"
+            aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+        <div class="container"> <a class="navbar-brand" href="https://codegirls.consulnet.net/" target="_blank">CODEGIRLS</a>
+            <div class="collapse navbar-collapse" id="navbarsExampleDefault">
+                <ul class="navbar-nav ml-auto">
+                    
+                    <li class="nav-item <%= locals.app %>">
+                        <a class="nav-link" href="/"> ChatsApp </a>
+                    </li>
+                    <li class="nav-item <%= locals.login %>">
+                            <a class="nav-link" href="/login"> Login </a>
+                        </li>
+                    
+                    <li class="nav-item <%= locals.register %>">
+                        <a class="nav-link" href="/register"> Register </a>
+                    </li>
+                    <li class="nav-item <%= locals.logout %>">
+                            <a class="nav-link" href="/logout"> Logout </a>
+                        </li>
+                </ul>
+            </div>
+        </div>
+    </nav>

@@ -1,0 +1,321 @@
+<% include header.ejs %>
+<div class="row my-1 mx-3">
+  <div class="col-md-12">
+    <h2 class="text-center">Welcome to the ChatsApp, <%=locals.username%>.</h2>
+  </div>
+</div>
+<div class="d-flex" id="wrapper">
+  <!-- SIDEBAR -->
+  <div class="bg-light border-right" id="sidebar-wrapper">
+    <div class="sidebar-heading"> BROADCAST & USERS </div>
+    <div class="list-group list-group-flush">
+      <a href="#broadcast" data-toggle="collapse" role="button" aria-expanded="false" aria-controls="broadcast"
+      class="list-group-item list-group-item-action bg-light font-weight-bold ancTags">
+        Broadcast Room 
+      <span class="badge badge-pill badge-success newMessage hideUser" onclick="checkMsg()">
+      New</span></a>
+      <% for (let i=0; i < locals.users.length; i++) { %>
+      <a href="#<%=locals.users[i].username%>" data-toggle="collapse" role="button" aria-expanded="false"
+        aria-controls="<%=locals.users[i].username%>" class="list-group-item list-group-item-action
+            bg-light userlist ancTags" data-username="<%=locals.users[i].username%>" data-socket="" onclick="check()">
+        <button type="button" class="btn btn-default
+            btn-circle status"></button>
+        <%= locals.users[i].username %>
+        <span class="badge badge-pill badge-success newMessage hideUser" onclick="checkMsg()">New</span></a>
+      <% } %>
+    </div>
+  </div>
+  <!-- MAIN CONTENT -->
+  <div id="page-content-wrapper">
+    <button class="btn btn-secondary mb-3 mt-2
+          mx-2 btn-sm" id="menu-toggle"><i class="fas fa-sliders-h"> Userlist </i></button>
+    <!-- BROADCAST CHAT -->
+    <div class="container-fluid collapse" id="broadcast">
+      <!-- CHAT WINDOW -->
+      <div class="card card-body">
+        <div class="chat-window">
+          <div class="chat-output"></div>
+          <div class="typing"></div>
+        </div>
+        <input class="chat-message" type="text" placeholder="Message" required />
+        <button class="chat-send">Send</button>
+      </div>
+    </div>
+    <!-- PRIVATE CHAT -->
+    <% for (let i=0; i <locals.users.length; i++) { %>
+    <div class="container-fluid collapse private" id="<%=locals.users[i].username%>" data-socket="">
+      <div class="card card-body">
+        <div class="chat-window">
+          <div class="chat-output">
+          </div>
+        </div>
+        <input class="chat-message" type="text" placeholder="Message"/>
+        <button class="chat-send"> Send </button>
+      </div>
+    </div>
+    <% } %>
+  </div>
+</div>
+
+<% include footer.ejs %>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+/* eslint-disable require-jsdoc */
+
+// Make Connection between Client and Server
+// const socket = io.connect('https://cg-chatsapp.herokuapp.com/');
+const socket = io.connect('http://localhost:3000');
+
+let activeChatWindow;
+
+// Collapse hide/show
+$('.collapse').on('show.bs.collapse', function(e) {
+  $('.collapse').each(function() {
+    $(this).collapse('hide');
+  });
+  activeChatWindow = $(e.target).attr('id');
+});
+
+$('.collapse').on('hide.bs.collapse', function(e) {
+  activeChatWindow = '';
+});
+
+// To show active chat window in the userlist..
+$('.ancTags').on('click', function(e) {
+  $('.ancTags').each(function() {
+    if (this !== e.target) {
+      $(this).removeClass('active');
+    }
+  });
+  $(e.target).toggleClass('active');
+});
+
+$('#menu-toggle').click(function(e) {
+  e.preventDefault();
+  $('#wrapper').toggleClass('toggled');
+});
+
+// Onclick functions to hide newMessage badge
+function check() {
+  $(event.target).find('.newMessage').addClass('hideUser');
+}
+
+function checkMsg() {
+  $(event.target).addClass('hideUser');
+}
+
+// Get elements from DOM
+const sender = '<%=locals.username%>';
+const outputB = $('#broadcast').find('.chat-output');
+const messageB = $('#broadcast').find('.chat-message');
+const sendB = $('#broadcast').find('.chat-send');
+const typingB = $('#broadcast').find('.typing');
+
+// PRIVATE CHATS -- these will be arrays.
+const messageP = $('.private').find('.chat-message');
+const sendP = $('.private').find('.chat-send');
+const private = $('.private');
+// includes private/broadcast new message badge
+const newMessage = $('.newMessage');
+// To get users from sidebar
+const userlist = $('.userlist');
+
+// Logged in user (YOU)
+const userInfo = {
+  sender: sender,
+};
+
+// Hide logged in user (YOU) from the userlist
+function chupJao() {
+  for (let i = 0; i < userlist.length; i++) {
+    if (userlist[i].dataset.username.trim() == sender) {
+      userlist[i].classList.add('hideUser');
+    }
+  }
+}
+
+// Emit Online Notification to other users
+socket.on('connect', () => {
+  // To save socket ID of logged in user (YOU)
+  userInfo.socket = socket.id;
+  socket.emit('newUser', userInfo);
+  chupJao();
+});
+
+// Update already online users from server
+socket.on('onlineUsers', (data) => {
+  for (let j = 0; j < data.length; j++) {
+    for (let i = 0; i < userlist.length; i++) {
+      if (userlist[i].dataset.username.trim() == data[j].sender) {
+        userlist[i].querySelector('.status').classList.add('online');
+        userlist[i].dataset.socket = data[j].socket;
+        private[i].dataset.socket = data[j].socket;
+      }
+    }
+  }
+});
+
+// Listen to newUser event/notification
+socket.on('newUser', (data) => {
+  let oldUser;
+  if (data !== '') {
+    outputB.append(`<p> ${data.sender} is online`);
+    for (let i = 0; i < userlist.length; i++) {
+      if (userlist[i].dataset.username.trim() == data.sender) {
+        userlist[i].querySelector('.status').classList.add('online');
+        userlist[i].dataset.socket = data.socket;
+        private[i].dataset.socket = data.socket;
+        oldUser = true;
+      }
+    }
+    // To update newly registered users while the socket was already on(if needed)
+    if (!oldUser) {
+      location.reload();
+    }
+  }
+});
+
+// Listen to user offline event/notification
+socket.on('userLeft', (data) => {
+  if (data !== 'transport close') {
+    outputB.append(`<p> ${data} is offline`);
+    for (let i = 0; i < userlist.length; i++) {
+      if (userlist[i].dataset.username.trim() == data) {
+        userlist[i].querySelector('.status').classList.remove('online');
+        userlist[i].dataset.socket = '';
+        private[i].dataset.socket = '';
+      }
+    }
+  }
+});
+
+// Setup functions to send broadcast message
+function sendBM() {
+  if (event instanceof MouseEvent || event.keyCode === 13) {
+    if (messageB.val().trim() == '') {
+      messageB.attr('placeholder', 'Message cannot be blank');
+    } else {
+      socket.emit('chat', {
+        message: messageB.val(),
+        sender: sender,
+      });
+      messageB.val('');
+      messageB.attr('placeholder', 'Message');
+    }
+  }
+}
+
+// Add Event Listeners and Emit Events
+sendB.bind('click', sendBM);
+messageB.bind('keyup', sendBM);
+
+// Listen to Broadcast Chat Event..
+socket.on('chat', (data) => {
+  typingB.html('');
+  outputB.append(`<p> <strong> ${data.sender} </strong>
+    ${data.message} </p>`);
+    // Auto Scroll
+  $('.chat-window').stop().animate({
+    scrollTop: $('.chat-window')[0].scrollHeight}, 1000);
+});
+
+// Broadcast Typing Message
+messageB.bind('keypress', () => {
+  socket.emit('typing', {
+    sender: sender,
+  });
+});
+
+// Listen to Typing Socket
+socket.on('typing', (data) => {
+  typingB.html(`<p> <em> ${data.sender} is typing a message..</em> </p>`);
+});
+
+//PRIVATE MESSAGES SETUP
+// Setup function to send private message
+function sendPM() {
+  let messageBox;
+  if (event.keyCode === 13) {
+    messageBox = $(this);
+    callback();
+  } else if (event instanceof MouseEvent) {
+    messageBox = $(this).siblings('.chat-message');
+    callback();
+  }
+
+  function callback() {
+    if (messageBox.val().trim() == '') {
+      messageBox.attr('placeholder', 'Message cannot be blank');
+    } else {
+      socket.emit('PM', {
+        message: messageBox.val(),
+        sender: userInfo.sender,
+        senderId: userInfo.socket,
+        sendTo: messageBox.parent('div').parent('div').attr('data-socket'),
+        toUser: messageBox.parent('div').parent('div').attr('id'),
+      });
+      messageBox.val('');
+      messageBox.attr('placeholder', 'Message');
+    }
+  }
+}
+
+sendP.bind('click', sendPM);
+messageP.bind('keyup', sendPM);
+
+function autoScroll(from) {
+  const chatWindow = $(from).find('.chat-window');
+    $(chatWindow).stop().animate({scrollTop: $(chatWindow)[0].scrollHeight}, 1000);
+}
+
+socket.on('PMsuccess', (data) => {
+  let from;
+  for (i = 0; i < userlist.length; i++) {
+    if (userlist[i].dataset.username == data.sender) {
+      from = '#' + userlist[i].dataset.username.trim();
+      if (activeChatWindow != data.sender) {
+        userlist[i].querySelector('.newMessage').classList.remove('hideUser');
+      }
+    }
+  }
+  $(from).find('.chat-output').append(`<p> 
+  <strong> ${data.sender} </strong> ${data.message} </p>`);
+  autoScroll(from);
+});
+
+socket.on('PMupdate', (data) => {
+  let from;
+  for (i = 0; i < userlist.length; i++) {
+    if (userlist[i].dataset.username == data.toUser) {
+      from = '#' + userlist[i].dataset.username.trim();
+    }
+  }
+  $(from).find('.chat-output').append(`<p> 
+  <strong> ${data.sender} </strong> ${data.message} </p>`);
+  autoScroll(from);
+});
+
+socket.on('PMerror', (data) => {
+  let from;
+  for (i = 0; i < userlist.length; i++) {
+    if (userlist[i].dataset.username == data.toUser) {
+      from = '#' + userlist[i].dataset.username.trim();
+    }
+  }
+  $(from).find('.chat-output').append(`<p> 
+  <strong> Cannot send a message to offline user. </strong> </p>`);
+  autoScroll(from);
+});
+
+// If user tries to open multiple tabs while user is active on one browser
+socket.on('multipleTabs', () => {
+  window.location = '/multipleTabs';
+});
+
+// Send user Info when user disconnects.
+socket.on('disconnect', () => {
+});
+
+</script>
+</body>
+</html>
