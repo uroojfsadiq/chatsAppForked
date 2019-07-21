@@ -46,8 +46,16 @@ router.get('/login', function(req, res) {
   }
 });
 
+router.get('/loginError', function(req, res) {
+  res.render('login', {
+    login: 'active',
+    message: 'Incorrect Username or Password.',
+  });
+});
+
 router.post('/login', function(req, res) {
-  passport.authenticate('local')(req, res, function() {
+  passport.authenticate('local', {failureRedirect:
+    '/loginError'})(req, res, function() {
     // To save user in session..
     req.session.user = req.user;
     res.redirect('/');
