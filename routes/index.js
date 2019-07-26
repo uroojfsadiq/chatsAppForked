@@ -18,13 +18,16 @@ function isLoggedIn(req, res, next) {
   }
 }
 
+
 // Main Application
 router.get('/', isLoggedIn, function(req, res) {
+// const host = process.env.URL || 'http://localhost:3000';
   User.find(function(err, doc) {
     userList = doc;
     res.render('chatsapp', {
       users: userList, style: true,
       app: 'active', username: req.session.user.username,
+      host: 'http://localhost:3000' || process.env.URL,
     });
   });
 });
