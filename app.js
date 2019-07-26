@@ -21,7 +21,9 @@ const User = require('./models/user');
 const app = express();
 
 // Socket IO
-const server = app.listen(3000);
+const port = process.env.PORT || 3000;
+app.set('port', port);
+const server = app.listen(port);
 const socket = require('socket.io');
 const io = socket.listen(server);
 
@@ -132,4 +134,4 @@ app.use(function(err, req, res, next) {
   res.render('error');
 });
 
-module.exports = app;
+module.exports = {app,server};
