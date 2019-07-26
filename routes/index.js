@@ -27,7 +27,7 @@ router.get('/', isLoggedIn, function(req, res) {
     res.render('chatsapp', {
       users: userList, style: true,
       app: 'active', username: req.session.user.username,
-      host: 'http://localhost:3000' || process.env.URL,
+      host: process.env.URL || 'http://localhost:3000',
     });
   });
 });
