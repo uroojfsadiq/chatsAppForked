@@ -64,7 +64,7 @@
 
 // Make Connection between Client and Server
 // const socket = io.connect('https://cg-chatsapp.herokuapp.com/');
-const socket = io.connect('http://localhost:3000');
+const socket = io.connect(process.env.URL || 'http://localhost:3000');
 
 let activeChatWindow;
 
